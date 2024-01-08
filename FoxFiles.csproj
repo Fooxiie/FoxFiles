@@ -32,9 +32,15 @@
         <ErrorReport>prompt</ErrorReport>
         <WarningLevel>4</WarningLevel>
     </PropertyGroup>
+    <PropertyGroup>
+      <PostBuildEvent>xcopy /Y "$(TargetDir)FoxFiles.dll" "D:\Steam\steamapps\common\Nova-Life\Servers\test\Plugins"</PostBuildEvent>
+    </PropertyGroup>
     <ItemGroup>
         <Reference Include="Assembly-CSharp">
           <HintPath>D:\Steam\steamapps\common\Nova-Life\Nova-Life_Data\Managed\Assembly-CSharp.dll</HintPath>
+        </Reference>
+        <Reference Include="Assembly-CSharp-firstpass">
+          <HintPath>D:\Steam\steamapps\common\Nova-Life\Nova-Life_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
         </Reference>
         <Reference Include="FoxORM">
           <HintPath>..\FoxORM\bin\Debug\FoxORM.dll</HintPath>
@@ -42,15 +48,28 @@
         <Reference Include="MyMenu">
           <HintPath>D:\Steam\steamapps\common\Nova-Life\Servers\test\Plugins\MyMenu.dll</HintPath>
         </Reference>
+        <Reference Include="Newtonsoft.Json">
+          <HintPath>D:\Steam\steamapps\common\Nova-Life\Nova-Life_Data\Managed\Newtonsoft.Json.dll</HintPath>
+        </Reference>
         <Reference Include="System"/>
         <Reference Include="System.Core"/>
         <Reference Include="System.Data"/>
         <Reference Include="System.Xml"/>
+        <Reference Include="UnityEngine.CoreModule">
+          <HintPath>D:\Steam\steamapps\common\Nova-Life\Nova-Life_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+        </Reference>
     </ItemGroup>
     <ItemGroup>
         <Compile Include="FoxFiles.cs" />
+        <Compile Include="Models\Configuration.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
         <Compile Include="UIManager.cs" />
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\FoxORM\FoxORM.csproj">
+        <Project>{e651626f-24b4-4224-a2e3-d7dd40654914}</Project>
+        <Name>FoxORM</Name>
+      </ProjectReference>
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
