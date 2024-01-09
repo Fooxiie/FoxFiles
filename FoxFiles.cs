@@ -13,7 +13,7 @@ namespace FoxFiles
 {
     public class FoxFiles : Plugin
     {
-        private FoxOrm _foxOrm;
+        public FoxOrm FoxOrm;
 
         public FoxFiles(IGameAPI api) : base(api)
         {
@@ -27,20 +27,23 @@ namespace FoxFiles
             {
                 UIManager.GetInstance().SpawnMenu();
                 UIManager.GetInstance().SpawnAdminMenu();
+                UIManager.GetInstance().SetFoxFilesInstance(this);
 
                 InitDatabase();
             }
             catch (Exception error)
             {
-                Debug.LogError(error);
+                Debug.LogError("[FoxFiles] :" +  error);
             }
         }
 
         private void InitDatabase()
         {
-            _foxOrm = new FoxOrm(Path.Combine(pluginsPath, "FoxFiles/database.sqlite"));
+            FoxOrm = new FoxOrm(Path.Combine(pluginsPath, "FoxFiles/database.sqlite"));
 
-            _foxOrm.RegisterTable<Configuration>();
+            FoxOrm.RegisterTable<Configuration>();
+            FoxOrm.RegisterTable<TypeDocument>();
+            FoxOrm.RegisterTable<Document>();
             VerifyConfigMigrations();
         }
 
@@ -50,7 +53,7 @@ namespace FoxFiles
             {
                 { "minAdminLvlRequired", "5" }
             };
-            var listConfig = await _foxOrm.QueryAll<Configuration>();
+            var listConfig = await FoxOrm.QueryAll<Configuration>();
 
             foreach (var pair in defaultConfig)
             {
@@ -66,7 +69,7 @@ namespace FoxFiles
                     value = pair.Value,
                     configCode = pair.Key
                 };
-                var resultInsert = await _foxOrm.Save(newConfig);
+                var resultInsert = await FoxOrm.Save(newConfig);
                 Debug.LogWarning($"[Migration FoxFiles] adding config {pair.Key} : {resultInsert}");
             }
         }
