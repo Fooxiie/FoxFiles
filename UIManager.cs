@@ -1,4 +1,7 @@
-﻿using FoxFiles.Models;
+﻿using System.Collections.Generic;
+using System.Linq;
+using FoxFiles.Models;
+using FoxFiles.PackagePanel;
 using FoxORM;
 using Life;
 using Life.Network;
@@ -6,6 +9,7 @@ using Life.UI;
 using Microsoft.Win32.SafeHandles;
 using MyMenu.Entities;
 using UIPanelManager;
+using UnityEngine;
 
 namespace FoxFiles
 {
@@ -30,7 +34,12 @@ namespace FoxFiles
         {
             _foxInstance = foxFiles;
         }
-        
+
+        public FoxFiles getFoxInstance()
+        {
+            return _foxInstance;
+        }
+
         public void SpawnMenu()
         {
             _section = new Section(Section.GetSourceName(), Section.GetSourceName(), "v1.0.0", "Fooxiie");
@@ -57,7 +66,7 @@ namespace FoxFiles
             UIPanel panel = new UIPanel("Admin Document", UIPanel.PanelType.Tab);
             panel.AddTabLine("Mes Types de documents",
                 ui => PanelManager.NextPanel(player, ui, () => PanelTypeDocument(player)));
-            
+
             panel.AddButton("Sélectionner", ui => ui.SelectTab());
             panel.AddButton("Fermer", ui => PanelManager.Quit(ui, player));
             player.ShowPanelUI(panel);
@@ -70,7 +79,7 @@ namespace FoxFiles
                 ui => PanelManager.NextPanel(player, ui, () => ListAllTypeDocument(player)));
             panel.AddTabLine("Créer un type",
                 ui => PanelManager.NextPanel(player, ui, () => CreateTypeDocument(player)));
-            
+
             panel.AddButton("Sélectionner", ui => ui.SelectTab());
             panel.AddButton("Retour", ui => PanelManager.NextPanel(player, panel, () => OpenAdminPanel(player)));
             panel.AddButton("Fermer", ui => PanelManager.Quit(ui, player));
@@ -79,7 +88,7 @@ namespace FoxFiles
 
         private async void ListAllTypeDocument(Player player)
         {
-            UIPanel panel = new UIPanel("Tous les types documents", UIPanel.PanelType.Tab);
+            var panel = new UIPanel("Tous les types documents", UIPanel.PanelType.Tab);
             foreach (var typeDocument in await _foxInstance.FoxOrm.QueryAll<TypeDocument>())
             {
                 panel.AddTabLine(typeDocument.TypeName, null);
@@ -87,10 +96,12 @@ namespace FoxFiles
 
             if (panel.lines.Count == 0)
             {
-                panel.AddTabLine($"<color={PanelManager.Colors[NotificationManager.Type.Error]}>Aucun Type de document</color>", null);
+                panel.AddTabLine(
+                    $"<color={PanelManager.Colors[NotificationManager.Type.Error]}>Aucun Type de document</color>",
+                    null);
             }
-            
-            panel.AddButton("Editer", ui => ui.SelectTab());
+
+            // panel.AddButton("Editer", ui => ui.SelectTab());
             panel.AddButton("Retour", ui => PanelManager.NextPanel(player, panel, () => PanelTypeDocument(player)));
             panel.AddButton("Fermer", ui => PanelManager.Quit(ui, player));
             player.ShowPanelUI(panel);
@@ -98,7 +109,11 @@ namespace FoxFiles
 
         private void CreateTypeDocument(Player player)
         {
-            throw new System.NotImplementedException();
+            var formTypeDocument = 
+                new FormTypeDocumentPanel("Type document",
+                    new List<string>() { "Nom"},
+                    player, () => PanelTypeDocument(player));
+            formTypeDocument.Display();
         }
     }
 }

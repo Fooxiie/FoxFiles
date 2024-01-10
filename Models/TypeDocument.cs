@@ -11,8 +11,6 @@ namespace FoxFiles.Models
         [NotNull]
         public string TypeName { get; set; }
 
-        public int TypeBiz { get; set; } = 0;
-
         /// <summary>
         /// Character Id of the author
         /// </summary>

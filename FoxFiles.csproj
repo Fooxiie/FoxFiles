@@ -67,6 +67,7 @@
         <Compile Include="Models\Configuration.cs" />
         <Compile Include="Models\Document.cs" />
         <Compile Include="Models\TypeDocument.cs" />
+        <Compile Include="PackagePanel\FormTypeDocumentPanel.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
         <Compile Include="UIManager.cs" />
     </ItemGroup>
