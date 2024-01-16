@@ -45,6 +45,9 @@
         <Reference Include="FoxORM">
           <HintPath>D:\Steam\steamapps\common\Nova-Life\Servers\test\Plugins\FoxORM.dll</HintPath>
         </Reference>
+        <Reference Include="Mirror">
+          <HintPath>D:\Steam\steamapps\common\Nova-Life\Nova-Life_Data\Managed\Mirror.dll</HintPath>
+        </Reference>
         <Reference Include="MyMenu">
           <HintPath>D:\Steam\steamapps\common\Nova-Life\Servers\test\Plugins\MyMenu.dll</HintPath>
         </Reference>
@@ -66,6 +69,7 @@
         <Compile Include="FoxFiles.cs" />
         <Compile Include="Models\Configuration.cs" />
         <Compile Include="Models\Document.cs" />
+        <Compile Include="Models\TypeDocBizAllowed.cs" />
         <Compile Include="Models\TypeDocument.cs" />
         <Compile Include="PackagePanel\FormTypeDocumentPanel.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>

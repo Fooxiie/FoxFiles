@@ -111,7 +111,7 @@ namespace FoxFiles
         {
             var formTypeDocument = 
                 new FormTypeDocumentPanel("Type document",
-                    new List<string>() { "Nom"},
+                    new List<string>() { "Nom" },
                     player, () => PanelTypeDocument(player));
             formTypeDocument.Display();
         }

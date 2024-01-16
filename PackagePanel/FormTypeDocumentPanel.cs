@@ -18,6 +18,7 @@ namespace FoxFiles.PackagePanel
 
         private int doneStep = 0;
         private Dictionary<string, string> finalDirectory;
+        private List<int> bizAllowed = new List<int>();
 
         public FormTypeDocumentPanel(string title, List<string> fields, Player player, Action previousAction)
         {
@@ -29,38 +30,87 @@ namespace FoxFiles.PackagePanel
             finalDirectory = fields.ToDictionary(x => x);
         }
 
-        private string makeTitle()
+        private string MakeTitle()
         {
             return $"{_title} ({doneStep}\\{_fields.Count})";
         }
 
         public void Display()
         {
-            var panel = new UIPanel(makeTitle(), UIPanel.PanelType.Tab);
+            var panel = new UIPanel(MakeTitle(), UIPanel.PanelType.Tab);
             foreach (var field in finalDirectory)
             {
-                panel.AddTabLine($"{field.Key} : {field.Value}", ui => Action(field.Key));
+                panel.AddTabLine($"<color=#dc8031>{field.Key}</color> : {field.Value}", ui => EditField(field.Key));
             }
-            
-            
+
+            panel.AddTabLine("<color=#dc8031>Bizs autorisés</color>",
+                ui => PanelManager.NextPanel(_player, panel, Autorize));
 
             panel.AddButton("Editer", ui => ui.SelectTab());
-            panel.AddButton("Valider", async ui =>
+
+            async void Action(UIPanel ui)
             {
                 var typeDocument = new TypeDocument()
-                {
-                    TypeName = finalDirectory["Nom"],
-                    Author = _player.character.Id,
-                };
+                    { TypeName = finalDirectory["Nom"], Author = _player.character.Id, };
                 await UIManager.GetInstance().getFoxInstance().FoxOrm.Save(typeDocument);
+                var typeDocumentGenerated = await UIManager.GetInstance().getFoxInstance().FoxOrm
+                    .Query<TypeDocument>(elmt =>
+                        elmt.TypeName == typeDocument.TypeName && elmt.Author == _player.character.Id);
+                foreach (var bizId in bizAllowed)
+                {
+                    var typeDocBizAllowed = new TypeDocBizAllowed()
+                    {
+                        BizAllowedId = bizId,
+                        TypeDocumentId = typeDocumentGenerated[0].Id
+                    };
+                    await UIManager.GetInstance().getFoxInstance().FoxOrm.Save<TypeDocBizAllowed>(typeDocBizAllowed);
+                }
+
+                bizAllowed.Clear();
                 PanelManager.NextPanel(_player, panel, _previousAction);
-            });
+            }
+
+            panel.AddButton("Valider", Action);
             panel.AddButton("Retour", ui => PanelManager.NextPanel(_player, panel, _previousAction));
             panel.AddButton("Fermer", ui => PanelManager.Quit(ui, _player));
             _player.ShowPanelUI(panel);
         }
 
-        private void Action(string fieldName)
+        private void Autorize()
+        {
+            UIPanel panel = new UIPanel("Selectionner les type entreprise autorisés", UIPanel.PanelType.Tab);
+
+            Nova.biz.LoadBizs();
+            foreach (var biz in Nova.biz.bizs)
+            {
+                if (bizAllowed.Contains(biz.Id))
+                {
+                    panel.AddTabLine("<color=#85DF6A>" + biz.BizName + "</color>", ui => { });
+                }
+                else
+                {
+                    panel.AddTabLine(biz.BizName, ui => { });
+                }
+            }
+
+            panel.AddButton("Valider", ui =>
+            {
+                if (bizAllowed.Contains(Nova.biz.bizs[ui.selectedTab].Id))
+                {
+                    bizAllowed.Remove(Nova.biz.bizs[ui.selectedTab].Id);
+                }
+                else
+                {
+                    bizAllowed.Add(Nova.biz.bizs[ui.selectedTab].Id);
+                }
+                PanelManager.NextPanel(_player, panel, Autorize);
+            });
+            panel.AddButton("Retour", ui =>
+                PanelManager.NextPanel(_player, panel, Display));
+            _player.ShowPanelUI(panel);
+        }
+
+        private void EditField(string fieldName)
         {
             if (!finalDirectory.ContainsKey(fieldName))
             {
@@ -80,10 +130,12 @@ namespace FoxFiles.PackagePanel
                     finalDirectory[fieldName] = inputPanel.inputText;
                     PanelManager.NextPanel(_player, ui, Display);
                 }
-                else PanelManager.Notification(_player, "Erreur", "Vous devez renseigner une valeur", NotificationManager.Type.Error);
+                else
+                    PanelManager.Notification(_player, "Erreur", "Vous devez renseigner une valeur",
+                        NotificationManager.Type.Error);
             });
             inputPanel.AddButton("Fermer", (ui) => PanelManager.Quit(ui, _player));
-            
+
             _player.ShowPanelUI(inputPanel);
         }
     }
