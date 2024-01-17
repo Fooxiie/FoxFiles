@@ -44,7 +44,6 @@ namespace FoxFiles
             FoxOrm.RegisterTable<Configuration>();
             FoxOrm.RegisterTable<TypeDocument>();
             FoxOrm.RegisterTable<Document>();
-            FoxOrm.RegisterTable<TypeDocBizAllowed>();
             VerifyConfigMigrations();
         }
 

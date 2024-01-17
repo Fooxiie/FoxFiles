@@ -1,4 +1,5 @@
-﻿using SQLite;
+﻿using System.Collections.Generic;
+using SQLite;
 
 namespace FoxFiles.Models
 {
@@ -16,5 +17,7 @@ namespace FoxFiles.Models
         /// </summary>
         [NotNull]
         public int Author { get; set; }
+
+        public string AllowedIdBiz { get; set; }
     }
 }

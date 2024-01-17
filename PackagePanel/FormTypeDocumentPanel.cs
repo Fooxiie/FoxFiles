@@ -16,9 +16,10 @@ namespace FoxFiles.PackagePanel
         private Player _player;
         private Action _previousAction;
 
-        private int doneStep = 0;
-        private Dictionary<string, string> finalDirectory;
-        private List<int> bizAllowed = new List<int>();
+        private Dictionary<string, string> _finalDirectory;
+        private List<int> _bizAllowed = new List<int>();
+        private bool _isEditing = false;
+        private int oldId = 0;
 
         public FormTypeDocumentPanel(string title, List<string> fields, Player player, Action previousAction)
         {
@@ -27,53 +28,48 @@ namespace FoxFiles.PackagePanel
             _player = player;
             _previousAction = previousAction;
 
-            finalDirectory = fields.ToDictionary(x => x);
+            _finalDirectory = fields.ToDictionary(x => x);
         }
 
         private string MakeTitle()
         {
-            return $"{_title} ({doneStep}\\{_fields.Count})";
+            return $"{_title}";
         }
 
         public void Display()
         {
             var panel = new UIPanel(MakeTitle(), UIPanel.PanelType.Tab);
-            foreach (var field in finalDirectory)
+            foreach (var field in _finalDirectory)
             {
                 panel.AddTabLine($"<color=#dc8031>{field.Key}</color> : {field.Value}", ui => EditField(field.Key));
             }
 
-            panel.AddTabLine("<color=#dc8031>Bizs autorisés</color>",
+            panel.AddTabLine(
+                "<color=#dc8031>Bizs autorisés</color>" + (_bizAllowed.Count > 0 ? $"({_bizAllowed.Count})" : ""),
                 ui => PanelManager.NextPanel(_player, panel, Autorize));
 
             panel.AddButton("Editer", ui => ui.SelectTab());
 
-            async void Action(UIPanel ui)
-            {
-                var typeDocument = new TypeDocument()
-                    { TypeName = finalDirectory["Nom"], Author = _player.character.Id, };
-                await UIManager.GetInstance().getFoxInstance().FoxOrm.Save(typeDocument);
-                var typeDocumentGenerated = await UIManager.GetInstance().getFoxInstance().FoxOrm
-                    .Query<TypeDocument>(elmt =>
-                        elmt.TypeName == typeDocument.TypeName && elmt.Author == _player.character.Id);
-                foreach (var bizId in bizAllowed)
-                {
-                    var typeDocBizAllowed = new TypeDocBizAllowed()
-                    {
-                        BizAllowedId = bizId,
-                        TypeDocumentId = typeDocumentGenerated[0].Id
-                    };
-                    await UIManager.GetInstance().getFoxInstance().FoxOrm.Save<TypeDocBizAllowed>(typeDocBizAllowed);
-                }
-
-                bizAllowed.Clear();
-                PanelManager.NextPanel(_player, panel, _previousAction);
-            }
-
-            panel.AddButton("Valider", Action);
+            panel.AddButton("Valider", Save);
             panel.AddButton("Retour", ui => PanelManager.NextPanel(_player, panel, _previousAction));
             panel.AddButton("Fermer", ui => PanelManager.Quit(ui, _player));
             _player.ShowPanelUI(panel);
+        }
+
+        async void Save(UIPanel ui)
+        {
+            var typeDocument = new TypeDocument()
+            {
+                TypeName = _finalDirectory["Nom"],
+                Author = _player.character.Id,
+                AllowedIdBiz = String.Join(",", _bizAllowed)
+            };
+            if (_isEditing)
+                typeDocument.Id = oldId;
+            await UIManager.GetInstance().getFoxInstance().FoxOrm.Save(typeDocument);
+
+            _bizAllowed.Clear();
+            PanelManager.NextPanel(_player, ui, _previousAction);
         }
 
         private void Autorize()
@@ -83,7 +79,7 @@ namespace FoxFiles.PackagePanel
             Nova.biz.LoadBizs();
             foreach (var biz in Nova.biz.bizs)
             {
-                if (bizAllowed.Contains(biz.Id))
+                if (_bizAllowed.Contains(biz.Id))
                 {
                     panel.AddTabLine("<color=#85DF6A>" + biz.BizName + "</color>", ui => { });
                 }
@@ -95,14 +91,15 @@ namespace FoxFiles.PackagePanel
 
             panel.AddButton("Valider", ui =>
             {
-                if (bizAllowed.Contains(Nova.biz.bizs[ui.selectedTab].Id))
+                if (_bizAllowed.Contains(Nova.biz.bizs[ui.selectedTab].Id))
                 {
-                    bizAllowed.Remove(Nova.biz.bizs[ui.selectedTab].Id);
+                    _bizAllowed.Remove(Nova.biz.bizs[ui.selectedTab].Id);
                 }
                 else
                 {
-                    bizAllowed.Add(Nova.biz.bizs[ui.selectedTab].Id);
+                    _bizAllowed.Add(Nova.biz.bizs[ui.selectedTab].Id);
                 }
+
                 PanelManager.NextPanel(_player, panel, Autorize);
             });
             panel.AddButton("Retour", ui =>
@@ -112,7 +109,7 @@ namespace FoxFiles.PackagePanel
 
         private void EditField(string fieldName)
         {
-            if (!finalDirectory.ContainsKey(fieldName))
+            if (!_finalDirectory.ContainsKey(fieldName))
             {
                 _player.Notify("Erreur formulaire", "Le field n'existe pas", NotificationManager.Type.Error);
                 return;
@@ -120,14 +117,14 @@ namespace FoxFiles.PackagePanel
 
             var inputPanel = new UIPanel(fieldName, UIPanel.PanelType.Input)
             {
-                inputPlaceholder = "value.."
+                inputPlaceholder = "Entrer votre valeur"
             };
 
             inputPanel.AddButton("Confirmer", (ui) =>
             {
                 if (ui.inputText.Length > 0)
                 {
-                    finalDirectory[fieldName] = inputPanel.inputText;
+                    _finalDirectory[fieldName] = inputPanel.inputText;
                     PanelManager.NextPanel(_player, ui, Display);
                 }
                 else
@@ -137,6 +134,18 @@ namespace FoxFiles.PackagePanel
             inputPanel.AddButton("Fermer", (ui) => PanelManager.Quit(ui, _player));
 
             _player.ShowPanelUI(inputPanel);
+        }
+
+        public async void Edit(TypeDocument typeDocument)
+        {
+            _finalDirectory["Nom"] = typeDocument.TypeName;
+            foreach (var typeDocBizAllowed in typeDocument.AllowedIdBiz.Split(','))
+            {
+                _bizAllowed.Add(int.Parse(typeDocBizAllowed));
+            }
+
+            _isEditing = true;
+            oldId = typeDocument.Id;
         }
     }
 }

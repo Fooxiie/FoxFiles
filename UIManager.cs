@@ -43,13 +43,8 @@ namespace FoxFiles
         public void SpawnMenu()
         {
             _section = new Section(Section.GetSourceName(), Section.GetSourceName(), "v1.0.0", "Fooxiie");
-            _section.Line = new UITabLine("Mes documents", OpenMyDocuments);
+            _section.Line = new UITabLine("Mes documents", ui => OpenMyDocuments(_section.GetPlayer(ui)));
             _section.Insert();
-        }
-
-        private void OpenMyDocuments(UIPanel panel)
-        {
-            panel.AddTabLine("Rien à voir ici !", _section.GetPlayer(panel).ClosePanel);
         }
 
         public void SpawnAdminMenu()
@@ -57,8 +52,21 @@ namespace FoxFiles
             _adminSection = new Section(Section.GetSourceName() + "Admin", Section.GetSourceName() + " Admin", "v1.0.0",
                 "Fooxiie", onlyAdmin: true);
             _adminSection.Line = new UITabLine("Administrations (FoxFiles)",
-                ui => OpenAdminPanel(_adminSection.GetPlayer(ui)));
+                ui =>
+                {
+                    OpenAdminPanel(_adminSection.GetPlayer(ui));
+                });
             _adminSection.Insert();
+        }
+
+        private void OpenMyDocuments(Player player)
+        {
+            UIPanel panel = new UIPanel("Admin Document", UIPanel.PanelType.Tab);
+            panel.AddTabLine("Y a rien n'a voir ici", null);
+
+            panel.AddButton("Sélectionner", ui => ui.SelectTab());
+            panel.AddButton("Fermer", ui => PanelManager.Quit(ui, player));
+            player.ShowPanelUI(panel);
         }
 
         private void OpenAdminPanel(Player player)
@@ -91,7 +99,15 @@ namespace FoxFiles
             var panel = new UIPanel("Tous les types documents", UIPanel.PanelType.Tab);
             foreach (var typeDocument in await _foxInstance.FoxOrm.QueryAll<TypeDocument>())
             {
-                panel.AddTabLine(typeDocument.TypeName, null);
+                panel.AddTabLine(typeDocument.TypeName, ui =>
+                {
+                    var formTypeDocument = 
+                        new FormTypeDocumentPanel("Type document",
+                            new List<string>() { "Nom" },
+                            player, () => ListAllTypeDocument(player));
+                    formTypeDocument.Edit(typeDocument);
+                    formTypeDocument.Display();
+                });
             }
 
             if (panel.lines.Count == 0)
@@ -101,7 +117,7 @@ namespace FoxFiles
                     null);
             }
 
-            // panel.AddButton("Editer", ui => ui.SelectTab());
+            panel.AddButton("Editer", ui => ui.SelectTab());
             panel.AddButton("Retour", ui => PanelManager.NextPanel(player, panel, () => PanelTypeDocument(player)));
             panel.AddButton("Fermer", ui => PanelManager.Quit(ui, player));
             player.ShowPanelUI(panel);
